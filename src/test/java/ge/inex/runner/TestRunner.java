@@ -1,9 +1,12 @@
 package ge.inex.runner;
 
 import ge.inex.pages.BasePage;
+import ge.inex.utils.ConfigReader;
+import ge.inex.utils.ExtentManager;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.testng.annotations.AfterMethod;
+import org.testng.annotations.AfterSuite;
 import org.testng.annotations.BeforeMethod;
 import java.time.Duration;
 
@@ -13,17 +16,24 @@ public class TestRunner {
     @BeforeMethod
     public void setup() {
         driver = new ChromeDriver();
-        driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(5));
+
+        //  ელოდება
+        driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(
+                Integer.parseInt(ConfigReader.getProperty("WAIT_TIME"))
+        ));
         driver.manage().window().maximize();
 
-        driver.get("https://www.inexi.ge/en");
+        //  URL-ის წამოღება config-დან
+        String baseUrl = ConfigReader.getProperty("BASE_URL");
+        if (baseUrl == null || baseUrl.isEmpty()) {
+            throw new RuntimeException("Base URL is missing in config.properties");
+        }
+        driver.get(baseUrl);
 
-        // ყველა ტესტამდე გათიშოს პოპაპი
+        //  ყველა ტესტამდე გათიშოს პოპაპი
         BasePage basePage = new BasePage(driver);
         basePage.closePopupIfExists();
     }
-
-
 
     @AfterMethod
     public void tearDown() {
@@ -31,4 +41,11 @@ public class TestRunner {
             driver.quit();
         }
     }
+
+    //  ყველა ტესტის დასრულების შემდეგ ExtentReports-ის flush()
+    @AfterSuite
+    public void tearDownExtentReports() {
+        ExtentManager.flushReports();
+    }
+
 }
